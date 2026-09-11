@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drone Sim — Lights On</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0c0f1d;
+      --bg2:     #111829;
+      --bg3:     #161e32;
+      --accent:  #c8ff00;
+      --dim:     #8aaf00;
+      --text:    #dde3f0;
+      --muted:   #6b748f;
+      --card:    #131a2e;
+      --border:  #1e2840;
+      --radius:  10px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { display: block; max-width: 100%; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* --- Nav --- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 3rem; height: 60px;
+      background: rgba(12,15,29,.9);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-size: .95rem; font-weight: 700; letter-spacing: .04em;
+      color: var(--text); text-transform: uppercase;
+    }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 2.2rem; }
+    .nav-links a {
+      font-size: .85rem; font-weight: 500; color: var(--muted);
+      transition: color .18s;
+    }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-dl {
+      font-size: .82rem; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--bg) !important;
+      background: var(--accent);
+      padding: .42rem 1.1rem; border-radius: 6px;
+      transition: opacity .18s;
+    }
+    .nav-dl:hover { opacity: .85; text-decoration: none !important; }
+
+    /* --- Hero --- */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center;
+      padding: 8rem 3rem 5rem;
+      max-width: 1120px; margin: 0 auto;
+    }
+    .hero-eyebrow {
+      font-size: .75rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 1.4rem;
+    }
+    .hero h1 {
+      font-size: clamp(3rem, 6vw, 5.2rem);
+      font-weight: 800; letter-spacing: -.04em; line-height: 1.05;
+      color: #fff; max-width: 720px;
+      margin-bottom: 1.6rem;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero-sub {
+      font-size: 1.05rem; color: var(--muted);
+      max-width: 520px; margin-bottom: 2.8rem; line-height: 1.75;
+    }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn-main {
+      display: inline-block;
+      background: var(--accent); color: #0c0f1d;
+      font-size: .9rem; font-weight: 700; letter-spacing: .03em;
+      padding: .85rem 2rem; border-radius: 7px;
+      transition: opacity .18s, transform .18s;
+      text-decoration: none;
+    }
+    .btn-main:hover { opacity: .88; transform: translateY(-1px); text-decoration: none; color: #0c0f1d; }
+    .btn-ghost {
+      display: inline-block;
+      background: transparent; color: var(--text);
+      font-size: .9rem; font-weight: 600;
+      border: 1px solid var(--border);
+      padding: .85rem 1.8rem; border-radius: 7px;
+      transition: border-color .18s, background .18s;
+      text-decoration: none;
+    }
+    .btn-ghost:hover { border-color: var(--accent); background: rgba(200,255,0,.05); text-decoration: none; color: var(--text); }
+    .hero-tags {
+      display: flex; gap: .6rem; flex-wrap: wrap;
+      margin-top: 3.5rem;
+    }
+    .tag {
+      font-size: .75rem; font-weight: 500; color: var(--muted);
+      border: 1px solid var(--border);
+      padding: .25rem .75rem; border-radius: 4px;
+      letter-spacing: .02em;
+    }
+
+    /* --- Divider --- */
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* --- Section wrapper --- */
+    section { padding: 5rem 3rem; }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .section-label {
+      font-size: .72rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: .7rem;
+    }
+    .section-title {
+      font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+      font-weight: 800; letter-spacing: -.025em;
+      color: #fff; margin-bottom: .9rem;
+    }
+    .section-body {
+      font-size: .95rem; color: var(--muted);
+      max-width: 540px; margin-bottom: 3rem; line-height: 1.8;
+    }
+
+    /* --- Cards grid --- */
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .card {
+      background: var(--card); padding: 1.8rem 1.6rem;
+      transition: background .2s;
+    }
+    .card:hover { background: var(--bg3); }
+    .card-label {
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: .6rem;
+    }
+    .card h3 { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: .55rem; }
+    .card p { font-size: .86rem; color: var(--muted); line-height: 1.75; }
+    /* Prevent orphaned last card leaving a gap in a 3-col grid */
+    .grid-3 > .card:last-child:nth-child(3n - 2) { grid-column: 1 / -1; }
+    .grid-3 > .card:last-child:nth-child(3n - 1) { grid-column: span 2; }
+
+    /* --- Controls table --- */
+    .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th {
+      background: var(--bg3); color: var(--muted);
+      font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: .8rem 1.2rem; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: .75rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(200,255,0,.03); }
+    kbd {
+      display: inline-block; background: var(--bg3);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: .08rem .45rem; font-family: monospace;
+      font-size: .8rem; color: var(--accent);
+    }
+
+    /* --- Tabs --- */
+    .tabs { display: flex; gap: .4rem; margin-bottom: 1.8rem; flex-wrap: wrap; }
+    .tab {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); border-radius: 6px;
+      padding: .45rem 1.1rem; font-size: .83rem; font-weight: 600;
+      cursor: pointer; transition: all .18s;
+      font-family: inherit;
+    }
+    .tab.active { border-color: var(--accent); color: var(--accent); background: rgba(200,255,0,.06); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* --- Steps --- */
+    .steps { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .step { display: flex; gap: 1.4rem; background: var(--card); padding: 1.4rem 1.6rem; }
+    .step-n {
+      font-size: .78rem; font-weight: 800; color: var(--accent);
+      min-width: 24px; padding-top: .1rem; letter-spacing: .04em;
+    }
+    .step h4 { font-size: .9rem; font-weight: 700; color: #fff; margin-bottom: .35rem; }
+    .step p { font-size: .85rem; color: var(--muted); }
+    pre {
+      background: #080b16; border: 1px solid var(--border);
+      border-radius: 6px; padding: 1rem 1.2rem;
+      font-size: .8rem; overflow-x: auto; margin-top: .7rem;
+      color: #9fc; line-height: 1.8; font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+    code { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: .85em; color: var(--accent); }
+    pre code { color: inherit; }
+
+    /* --- Arch --- */
+    .arch {
+      background: #080b16; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem 2.4rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .8rem; color: #6b748f;
+      overflow-x: auto; line-height: 2;
+    }
+    .arch .hi { color: var(--text); }
+    .arch .ac { color: var(--accent); }
+
+    /* --- Req grid --- */
+    .req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    .req {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.3rem;
+    }
+    .req h4 { font-size: .88rem; font-weight: 700; color: #fff; margin-bottom: .3rem; }
+    .req-ver {
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+      color: var(--accent); background: rgba(200,255,0,.1);
+      border-radius: 3px; padding: .1rem .5rem;
+      display: inline-block; margin-bottom: .5rem;
+    }
+    .req p { font-size: .82rem; color: var(--muted); }
+
+    /* --- Download --- */
+    .dl-box {
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 5rem 3rem; text-align: center;
+      background: linear-gradient(160deg, rgba(200,255,0,.04) 0%, transparent 60%);
+    }
+    .dl-box h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; color: #fff; margin-bottom: .7rem; letter-spacing: -.025em; }
+    .dl-box .sub { color: var(--muted); font-size: .95rem; max-width: 440px; margin: 0 auto 2.6rem; line-height: 1.8; }
+    .dl-row { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; }
+    .btn-dl {
+      display: inline-block;
+      background: var(--accent); color: #0c0f1d;
+      font-size: .92rem; font-weight: 800; letter-spacing: .03em;
+      padding: .9rem 2.2rem; border-radius: 8px;
+      text-decoration: none;
+      transition: opacity .18s, transform .2s;
+    }
+    .btn-dl:hover { opacity: .88; transform: translateY(-2px); text-decoration: none; color: #0c0f1d; }
+    .btn-dl-ghost {
+      display: inline-block;
+      background: transparent; color: var(--text);
+      font-size: .88rem; font-weight: 600;
+      border: 1px solid var(--border);
+      padding: .9rem 1.8rem; border-radius: 8px;
+      text-decoration: none;
+      transition: border-color .18s, background .18s;
+    }
+    .btn-dl-ghost:hover { border-color: var(--accent); background: rgba(200,255,0,.05); text-decoration: none; color: var(--text); }
+    .dl-note { margin-top: 1.4rem; font-size: .78rem; color: var(--muted); }
+    .dl-note a { color: var(--accent); }
+
+    /* --- Gallery --- */
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .gallery-item { position: relative; overflow: hidden; background: var(--card); }
+    .gallery-item img { width: 100%; height: 280px; object-fit: cover; display: block; transition: transform .4s ease; }
+    .gallery-item:hover img { transform: scale(1.03); }
+    .gallery-caption { padding: .9rem 1.1rem; }
+    .gallery-caption h4 { font-size: .88rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+    .gallery-caption p { font-size: .78rem; color: var(--muted); }
+
+    /* --- Footer --- */
+    footer {
+      background: var(--bg2); border-top: 1px solid var(--border);
+      padding: 2.5rem 3rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .footer-left { font-size: .82rem; color: var(--muted); }
+    .footer-left strong { color: var(--text); }
+    .footer-links { display: flex; gap: 1.6rem; }
+    .footer-links a { font-size: .82rem; color: var(--muted); transition: color .18s; }
+    .footer-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* --- Reveal --- */
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .55s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* --- Responsive --- */
+    @media (max-width: 700px) {
+      nav { padding: 0 1.4rem; }
+      .nav-links { display: none; }
+      section { padding: 3.5rem 1.4rem; }
+      .hero { padding: 7rem 1.4rem 4rem; }
+      footer { padding: 2rem 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Lights <span>On</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#modes">Modes</a>
+    <a href="#controls">Controls</a>
+    <a href="#setup">Setup</a>
+    <a href="#screenshots">Screenshots</a>
+    <a href="#download" class="nav-dl">Download</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div style="max-width:1120px;margin:0 auto;">
+  <div class="hero">
+    <div class="hero-eyebrow">Lights On — Drone Sim</div>
+    <h1>Physics-first drone simulation, built in <em>Godot 4.6</em></h1>
+    <p class="hero-sub">
+      A full-stack simulation environment modelling a quadcopter with real battery drain, wind turbulence, swarm AI, and an autopilot mode. Open source and free to run.
+    </p>
+    <div class="hero-actions">
+      <a href="#download" class="btn-main">Download</a>
+      <a href="#features" class="btn-ghost">See what's inside</a>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">Godot 4.6</span>
+      <span class="tag">39-drone swarm</span>
+      <span class="tag">OpenXR VR</span>
+      <span class="tag">Docker</span>
+      <span class="tag">Procedural terrain</span>
+    </div>
+  </div>
+</div>
+
+<hr />
+
+<!-- Overview -->
+<section id="overview">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Overview</div>
+      <h2 class="section-title">What it is</h2>
+      <p class="section-body">
+        Drone Sim is a Godot 4.6 project built around a realistic quadcopter flight model. Physics, swarm AI, terrain, and VR all run inside the same Godot scene. Open the project, hit play, and you're in the air.
+      </p>
+    </div>
+    <div class="grid-3 reveal">
+      <div class="card">
+        <div class="card-label">Godot project</div>
+        <h3>Godot-drone-master</h3>
+        <p>Flight physics, swarm AI, terrain, VR, day/night cycle. Runs at 1080p/60fps with Forward Plus rendering.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Deployment</div>
+        <h3>Docker support</h3>
+        <p>Includes a Dockerfile for running the sim headless. Useful for server deployments or automated testing.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Open source</div>
+        <h3>MIT licence</h3>
+        <p>All source code is available. Fork it, modify the physics constants, add new modes — it's yours to do with as you like.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Features -->
+<section id="features" style="background: var(--bg2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">What's included</div>
+      <h2 class="section-title">Features</h2>
+      <p class="section-body">
+        Built around a DJI Mini 4K-inspired quadcopter. The constants for wind, battery, and physics are all exposed at the top of Drone.gd if you want to tune them.
+      </p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal">
+        <h3>Flight physics</h3>
+        <p>Throttle, pitch, roll, yaw — all with input smoothing, hover hold, tilt limits, and ground clearance detection.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Wind and turbulence</h3>
+        <p>Three turbulence layers run simultaneously: fast jitter, medium sway, and slow drift. Gusts affect drone attitude in real time.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Battery drain</h3>
+        <p>Around 20 minutes of flight life. Aggressive manoeuvres burn more. At critical charge the drone returns home and lands automatically.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Swarm AI</h3>
+        <p>39 boids-driven drones with cohesion, separation, and alignment. Five preset formations — Star, Circle, Heart, Diamond, Wave — plus edge detection mode: give the sim a PNG or 3D model and it runs edge detection on it, then positions the swarm along the detected edges to trace the shape in the sky.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Autopilot</h3>
+        <p>Configurable waypoint lists with smooth navigation. Load a route and watch the drone fly it while you switch camera angles.</p>
+      </div>
+      <div class="card reveal">
+        <h3>VR / OpenXR</h3>
+        <p>First-person flight on any OpenXR-compatible headset. VRManager detects your runtime at launch — SteamVR, Monado, whatever you have.</p>
+      </div>
+      <div class="card reveal">
+        <h3>Procedural world</h3>
+        <p>Terrain3D plugin, town generator, HDR sky, day/night cycle, and a minimap. The environment changes as you fly through it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Modes -->
+<section id="modes">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Flight modes</div>
+      <h2 class="section-title">Pick a mode and fly</h2>
+      <p class="section-body">
+        The main menu gives you four options. Each one is independent — you're not locked into a single setup.
+      </p>
+    </div>
+    <div class="grid-4">
+      <div class="card reveal">
+        <div class="card-label">Manual</div>
+        <h3>Single Drone</h3>
+        <p>Full keyboard control with physics running. Good starting point for understanding the flight model.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-label">Swarm</div>
+        <h3>Swarm Mode</h3>
+        <p>39 drones running boids behaviour. Tab through formations and watch them reorganise mid-flight.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-label">Autonomous</div>
+        <h3>Autopilot</h3>
+        <p>Pre-set waypoint route. The drone handles navigation — you just watch or switch camera angles.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-label">Immersive</div>
+        <h3>VR</h3>
+        <p>First-person view through any OpenXR headset. Needs a runtime (SteamVR or Monado) running first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Controls -->
+<section id="controls" style="background: var(--bg2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Keyboard layout</div>
+      <h2 class="section-title">Controls</h2>
+      <p class="section-body">
+        All keys are active in Single Drone mode. In Swarm mode, Tab is the main extra key you'll use.
+      </p>
+    </div>
+    <div class="tbl-wrap reveal">
+      <table>
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Action</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><kbd>Space</kbd></td><td>Throttle up</td><td>Increase altitude and motor output</td></tr>
+          <tr><td><kbd>Shift</kbd></td><td>Throttle down</td><td>Reduce altitude and motor output</td></tr>
+          <tr><td><kbd>W</kbd></td><td>Pitch forward</td><td>Move the drone forward</td></tr>
+          <tr><td><kbd>S</kbd></td><td>Pitch back</td><td>Move the drone backward</td></tr>
+          <tr><td><kbd>A</kbd></td><td>Strafe left</td><td>Lateral roll movement</td></tr>
+          <tr><td><kbd>D</kbd></td><td>Strafe right</td><td>Lateral roll movement</td></tr>
+          <tr><td><kbd>Q</kbd></td><td>Yaw left</td><td>Rotate counter-clockwise</td></tr>
+          <tr><td><kbd>E</kbd></td><td>Yaw right</td><td>Rotate clockwise</td></tr>
+          <tr><td><kbd>H</kbd></td><td>Hover hold</td><td>Toggle altitude lock at current height</td></tr>
+          <tr><td><kbd>F</kbd></td><td>Camera toggle</td><td>Switch between first-person and chase camera</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Next formation</td><td>Swarm mode — cycles Star, Circle, Heart, Diamond, Wave</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Setup -->
+<section id="setup">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Getting started</div>
+      <h2 class="section-title">Running the sim</h2>
+      <p class="section-body">
+        You need Godot 4.6 installed. That's it. Clone the repo, open the project, and press play.
+      </p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <h4>Clone the repo</h4>
+          <pre><code>git clone https://github.com/Kristians2324/Drone-Sim-Master.git
+cd Drone-Sim-Master</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <h4>Open in Godot 4.6+</h4>
+          <p>Click Import, point it at <code>Godot-drone-master/</code>, select <code>project.godot</code>. The first import takes about a minute while it processes assets.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <h4>Press F5</h4>
+          <p>The main menu loads. Pick Single Drone, Swarm, or Autopilot and you're flying.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Requirements -->
+<section style="background: var(--bg2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Before you start</div>
+      <h2 class="section-title">What you need</h2>
+      <p class="section-body">Just Godot. Download the engine, open the project, and you're good to go.</p>
+    </div>
+    <div class="req-grid reveal">
+      <div class="req">
+        <h4>Godot Engine</h4>
+        <div class="req-ver">4.6+</div>
+        <p>The only hard requirement. <a href="https://godotengine.org/download" target="_blank">Download from godotengine.org</a></p>
+      </div>
+      <div class="req">
+        <h4>A decent GPU</h4>
+        <div class="req-ver">Vulkan</div>
+        <p>The sim uses Forward Plus rendering. Any GPU from the last five years should handle it fine.</p>
+      </div>
+      <div class="req">
+        <h4>OpenXR runtime</h4>
+        <div class="req-ver">Optional</div>
+        <p>Only if you want VR. SteamVR or Monado both work. Not needed for desktop play.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- VR -->
+<section style="background: var(--bg2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">Immersive flight</div>
+      <h2 class="section-title">VR and OpenXR</h2>
+      <p class="section-body">
+        OpenXR is enabled in the project settings already. You just need a runtime running on your machine before you launch.
+      </p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div>
+          <h4>Start a runtime</h4>
+          <p>Launch SteamVR, Monado, or anything else that exposes an OpenXR interface on your system.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div>
+          <h4>Open the project normally</h4>
+          <p>Godot detects the active runtime and enables VRManager automatically. Nothing to configure.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div>
+          <h4>Put the headset on</h4>
+          <p>You're in first-person. The same controls apply — throttle, pitch, roll, yaw.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Screenshots -->
+<section id="screenshots" style="background: var(--bg2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="section-label">In-game</div>
+      <h2 class="section-title">Screenshots</h2>
+      <p class="section-body">
+        A few things the sim can do. Drop more screenshots into the <code>website/images/</code> folder and add them here.
+      </p>
+    </div>
+    <div class="gallery reveal">
+      <div class="gallery-item">
+        <img src="images/swarm-batman.jpg" alt="39 drones forming a Batman logo using image-to-formation detection" />
+        <div class="gallery-caption">
+          <h4>Edge detection formation</h4>
+          <p>Feed the sim a PNG or a 3D model. It runs edge detection on the input and distributes the swarm along the edges — the drones form the shape in mid-air.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Download -->
+<section id="download">
+  <div class="wrap">
+    <div class="dl-box reveal">
+      <h2>Get the sim</h2>
+      <p class="sub">
+        Standalone Windows build ready to play. No Godot installation required.
+      </p>
+      <div class="dl-row">
+        <a href="https://mrcheese2324.itch.io/lights-on-drone-sim"
+           class="btn-dl" target="_blank">
+          Download on itch.io (Windows)
+        </a>
+        <a href="https://github.com/Kristians2324/Drone-Sim-Master"
+           class="btn-dl-ghost" target="_blank">
+          View source on GitHub
+        </a>
+      </div>
+      <p class="dl-note">
+        Windows 64-bit standalone build (267 MB) — includes full game executable, 3D drone models, city kit, nature assets, and textures. Extract and run <code>DroneSim.exe</code>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- Footer -->
+<footer>
+  <div class="footer-left">
+    <strong>Lights On</strong> &mdash; Drone Sim &mdash; MIT Licence
+  </div>
+  <div class="footer-links">
+    <a href="https://mrcheese2324.itch.io/lights-on-drone-sim" target="_blank">itch.io</a>
+    <a href="https://godotengine.org" target="_blank">Godot</a>
+    <a href="https://github.com/Kristians2324/Drone-Sim-Master" target="_blank">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
