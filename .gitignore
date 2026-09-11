@@ -1,3 +1,8 @@
 *.zip
 .DS_Store
 Thumbs.db
+DroneSim-Linux/
+DroneSim-macOS/
+*.pck
+*.x86_64
+*.so
